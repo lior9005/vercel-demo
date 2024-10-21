@@ -1,0 +1,8 @@
+{
+    "functions": {
+      "pages/api/fastApi.py": {
+        "runtime": "python3.9" 
+      }
+    }
+  }
+  
