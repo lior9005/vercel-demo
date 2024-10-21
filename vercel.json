@@ -1,8 +1,16 @@
 {
-    "functions": {
-      "pages/api/fastApi.py": {
-        "runtime": "vercel-python@3.12" 
+    "version": 2,
+    "builds": [
+      {
+        "src": "pages/api/fastApi.py",
+        "use": "@vercel/python"
       }
-    }
+    ],
+    "routes": [
+      {
+      "src": "/api/(.*)",
+      "dest": "pages/api/fastApi.py"
+      }
+    ]
   }
   
