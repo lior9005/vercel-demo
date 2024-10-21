@@ -1,174 +1,232 @@
-import Image from "next/image";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Inter } from "next/font/google";
-import client from "@/lib/mongodb";
-import type { InferGetServerSidePropsType, GetServerSideProps } from "next";
 
-type ConnectionStatus = {
-  isConnected: boolean;
+type Restaurant = {
+  name: string;
+  cuisine: string;
+  borough: string;
+  address: {
+    building: string;
+    street: string;
+    zipcode: string;
+  };
+  average_rating: number; // Updated to reflect the average rating
+  restaurant_id: string;
 };
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const getServerSideProps: GetServerSideProps<
-  ConnectionStatus
-> = async () => {
-  try {
-    await client.connect(); // `await client.connect()` will use the default database passed in the MONGODB_URI
-    return {
-      props: { isConnected: true },
-    };
-  } catch (e) {
-    console.error(e);
-    return {
-      props: { isConnected: false },
-    };
-  }
-};
+export default function Home() {
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [sortBy, setSortBy] = useState("average_rating");
+  const [order, setOrder] = useState("desc");
+  const [limit, setLimit] = useState(15); // State for number of restaurants to display
+  const [cuisines, setCuisines] = useState<string[]>([]); // State for unique cuisines
+  const [boroughs, setBoroughs] = useState<string[]>([]); // State for unique boroughs
+  const [filterCuisine, setFilterCuisine] = useState(""); // State for selected cuisine filter
+  const [filterBorough, setFilterBorough] = useState(""); // State for selected borough filter
+  const [loading, setLoading] = useState(false); // State for loading indicator
 
-export default function Home({
-  isConnected,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const sortOptions = [
+    { value: "name", label: "Name (A-Z)" },
+    { value: "average_rating", label: "Rating (High to Low)" },
+  ];
+
+  const limitOptions = [5, 10, 15, 20, 25]; // Options for number of restaurants to display
+
+  const fetchCuisines = async () => {
+    try {
+      setLoading(true); // Start loading
+      const response = await fetch(`http://localhost:8000/api/cuisines`);
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setCuisines(data); // Set the unique cuisines if data is an array
+      } else {
+        console.error("Failed to fetch cuisines: expected an array");
+        setCuisines([]); // Reset to an empty array in case of error
+      }
+    } catch (error) {
+      console.error("Error fetching cuisines:", error);
+      setCuisines([]); // Reset to an empty array in case of error
+    } finally {
+      setLoading(false); // End loading
+    }
+  };
+
+  const fetchBoroughs = async () => {
+    try {
+      setLoading(true); // Start loading
+      const response = await fetch(`http://localhost:8000/api/boroughs`);
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setBoroughs(data); // Set the unique boroughs if data is an array
+      } else {
+        console.error("Failed to fetch boroughs: expected an array");
+        setBoroughs([]); // Reset to an empty array in case of error
+      }
+    } catch (error) {
+      console.error("Error fetching boroughs:", error);
+      setBoroughs([]); // Reset to an empty array in case of error
+    } finally {
+      setLoading(false); // End loading
+    }
+  };
+
+  const fetchRestaurants = async () => {
+    try {
+      setLoading(true); // Start loading
+      const response = await fetch(
+        `http://localhost:8000/api/restaurants?sort_by=${sortBy}&order=${order}&limit=${limit}&filter_cuisine=${filterCuisine}&filter_borough=${filterBorough}`
+      );
+      const data = await response.json();
+      setRestaurants(data);
+    } catch (error) {
+      console.error("Error fetching restaurants:", error);
+    } finally {
+      setLoading(false); // End loading
+    }
+  };
+
+  useEffect(() => {
+    fetchCuisines();
+    fetchBoroughs();
+    fetchRestaurants();
+  }, []);
+
+  useEffect(() => {
+    fetchRestaurants(); // Fetch restaurants whenever the filter or sorting options change
+  }, [sortBy, order, limit, filterCuisine, filterBorough]);
+
   return (
     <main
       className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
+      style={{
+        backgroundImage: 'url(/vultures.jpeg)', // Set the background image
+        backgroundSize: 'cover', // Cover the entire background
+        backgroundPosition: 'center', // Center the image
+        backgroundAttachment: 'fixed', // Keep the background fixed
+        color: 'white', // Change text color for better contrast
+      }}
     >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Pages Router: Get started by editing&nbsp;
-          <code className="font-mono font-bold">pages/index.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+      <div className="flex flex-col place-items-center gap-12 bg-black bg-opacity-50 p-6 rounded-lg"> {/* Optional: Add a background to the content for better readability */}
+        <h1 className={`mb-3 text-2xl font-semibold`}>Rotem food storage!</h1>
 
-      <div className="flex flex-col place-items-center gap-12">
-        <div className="relative flex place-items-center gap-6 before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-          <Image
-            className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          {" + "}
-          <Image
-            className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] saturate-0 brightness-0 dark:saturate-100 dark:brightness-100"
-            src="/mongodb.svg"
-            alt="MongoDB Logo"
-            width={180}
-            height={37}
-            priority
-          />
+        {/* Sort and Limit Dropdowns */}
+        <div className="flex gap-4">
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)} 
+            className="bg-white text-black border border-gray-300 rounded p-2"
+          >
+            {sortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select 
+            value={order} 
+            onChange={(e) => setOrder(e.target.value)} 
+            className="bg-white text-black border border-gray-300 rounded p-2"
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+          <select 
+            value={limit} 
+            onChange={(e) => setLimit(Number(e.target.value))} 
+            className="bg-white text-black border border-gray-300 rounded p-2"
+          >
+            {limitOptions.map((option) => (
+              <option key={option} value={option}>
+                {option} Restaurants
+              </option>
+            ))}
+          </select>
         </div>
-        {isConnected ? (
-          <h2 className="text-lg text-green-500">
-            You are connected to MongoDB!
-          </h2>
+
+        {/* Filter Options */}
+        <div className="flex gap-4">
+          <select 
+            value={filterCuisine} 
+            onChange={(e) => setFilterCuisine(e.target.value)} 
+            className="bg-white text-black border border-gray-300 rounded p-2"
+          >
+            <option value="">Select Cuisine</option>
+            {cuisines.map((cuisine) => (
+              <option key={cuisine} value={cuisine}>
+                {cuisine}
+              </option>
+            ))}
+          </select>
+          <select 
+            value={filterBorough} 
+            onChange={(e) => setFilterBorough(e.target.value)} 
+            className="bg-white text-black border border-gray-300 rounded p-2"
+          >
+            <option value="">Select Borough</option>
+            {boroughs.map((borough) => (
+              <option key={borough} value={borough}>
+                {borough}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Loading Indicator */}
+        {loading ? (
+          <div className="flex items-center justify-center">
+            <div className="loader"></div> {/* Custom spinner */}
+          </div>
         ) : (
-          <h2 className="text-lg text-red-500">
-            You are NOT connected to MongoDB. Check the <code>README.md</code>{" "}
-            for instructions.
-          </h2>
+          // Display Restaurants in a Table
+          <table className="table-auto border-collapse border border-gray-300">
+            <thead>
+              <tr>
+                <th className="border border-gray-300 px-4 py-2">Name</th>
+                <th className="border border-gray-300 px-4 py-2">Cuisine</th>
+                <th className="border border-gray-300 px-4 py-2">Borough</th>
+                <th className="border border-gray-300 px-4 py-2">Address</th>
+                <th className="border border-gray-300 px-4 py-2">Average Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              {restaurants.map((restaurant, index) => (
+                <tr key={index}>
+                  <td className="border border-gray-300 px-4 py-2">{restaurant.name}</td>
+                  <td className="border border-gray-300 px-4 py-2">{restaurant.cuisine}</td>
+                  <td className="border border-gray-300 px-4 py-2">{restaurant.borough}</td>
+                  <td className="border border-gray-300 px-4 py-2">
+                    {`${restaurant.address.building} ${restaurant.address.street}, ${restaurant.address.zipcode}`}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2">{restaurant.average_rating.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          This page uses the&nbsp;<strong>Pages Router</strong>. Check out the
-          App Router version here:&nbsp;
-          <Link
-            href="/app-demo"
-            className="underline transition-colors ease-in-out hover:text-green-500"
-          >
-            <code>app/app-demo/page.tsx</code>
-          </Link>
-        </p>
       </div>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+      {/* Add CSS for the loader */}
+      <style jsx>{`
+        .loader {
+          border: 8px solid rgba(255, 255, 255, 0.3); /* Light background */
+          border-left: 8px solid white; /* White left border */
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          animation: spin 1s linear infinite;
+        }
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app&database=mongodb"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js + MongoDB.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-mongodb&project-name=nextjs-mongodb&repository-name=nextjs-mongodb&integration-ids=oac_jnzmjqM10gllKmSrG0SGrHOH"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </main>
   );
 }
