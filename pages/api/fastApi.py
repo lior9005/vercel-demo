@@ -9,7 +9,7 @@ app = FastAPI()
 # Allow requests from your Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[""https://vercel-demo-1w2l8vxqn-lior9005s-projects.vercel.app""],
+    allow_origins=["https://vercel-demo-1w2l8vxqn-lior9005s-projects.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
