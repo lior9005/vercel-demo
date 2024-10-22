@@ -37,7 +37,7 @@ export default function Home() {
   const fetchCuisines = async () => {
     try {
       setLoading(true); // Start loading
-      const response = await fetch(`http://127.0.0.1:8000/api/cuisines`);
+      const response = await fetch(`https://vercel-demo-two-iota.vercel.app/api/cuisines`);
       const data = await response.json();
       if (Array.isArray(data)) {
         setCuisines(data); // Set the unique cuisines if data is an array
@@ -56,7 +56,7 @@ export default function Home() {
   const fetchBoroughs = async () => {
     try {
       setLoading(true); // Start loading
-      const response = await fetch(`http://127.0.0.1:8000/api/boroughs`);
+      const response = await fetch(`https://vercel-demo-two-iota.vercel.app/api/boroughs`);
       const data = await response.json();
       if (Array.isArray(data)) {
         setBoroughs(data); // Set the unique boroughs if data is an array
@@ -76,7 +76,7 @@ export default function Home() {
     try {
       setLoading(true); // Start loading
       const response = await fetch(
-        `http://127.0.0.1:8000/api/restaurants?sort_by=${sortBy}&order=${order}&limit=${limit}&filter_cuisine=${filterCuisine}&filter_borough=${filterBorough}`
+        `https://vercel-demo-two-iota.vercel.app/api/restaurants?sort_by=${sortBy}&order=${order}&limit=${limit}&filter_cuisine=${filterCuisine}&filter_borough=${filterBorough}`
       );
       const data = await response.json();
       setRestaurants(data);
