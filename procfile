@@ -1,1 +1,1 @@
-web: gunicorn app\api\fastApi:app --workers=4 --worker-class=uvicorn.workers.UvicornWorker
+web: gunicorn app\api\fastApi:application --workers=4 --worker-class=uvicorn.workers.UvicornWorker
