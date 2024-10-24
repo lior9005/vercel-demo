@@ -26,6 +26,10 @@ try:
 except Exception as e:
     raise HTTPException(status_code=500, detail="Could not connect to MongoDB")
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 @app.get("/api/restaurants", response_model=List[Dict])
 def get_restaurants(
     sort_by: Optional[str] = Query("average_rating"),  # Default sorting by average rating
