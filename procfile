@@ -1,1 +1,1 @@
-web: uvicorn app.api.fastApi:app --host 0.0.0.0 --port $PORT
+web: fastapi dev app\api\fastApi:app --host 0.0.0.0 --port $PORT
