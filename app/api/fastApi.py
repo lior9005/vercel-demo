@@ -4,10 +4,10 @@ from typing import Optional, List, Dict
 import re
 from pymongo import MongoClient
 
-application = FastAPI()
+app = FastAPI()
 
 # Allow requests from your Next.js frontend
-application.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://vercel-demo-two-iota.vercel.app/"],
     allow_credentials=True,
@@ -26,11 +26,11 @@ try:
 except Exception as e:
     raise HTTPException(status_code=500, detail="Could not connect to MongoDB")
 
-@application.get("/health")
+@app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-@application.get("/api/restaurants", response_model=List[Dict])
+@app.get("/api/restaurants", response_model=List[Dict])
 def get_restaurants(
     sort_by: Optional[str] = Query("average_rating"),  # Default sorting by average rating
     order: Optional[str] = Query("desc"),  # Default order descending
@@ -72,7 +72,7 @@ def get_restaurants(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@application.get("/api/cuisines", response_model=List[str])
+@app.get("/api/cuisines", response_model=List[str])
 def get_unique_cuisines():
     try:
         # Find unique cuisines, excluding those with '/'
@@ -82,7 +82,7 @@ def get_unique_cuisines():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@application.get("/api/boroughs", response_model=List[str])
+@app.get("/api/boroughs", response_model=List[str])
 def get_boroughs():
     try:
         # Get unique boroughs from the restaurant collection
